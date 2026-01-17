@@ -1,0 +1,32 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Configure Cat Weight Tracker",
+        "description": "Set up the litter box weight sensor and thresholds.",
+        "data": {
+          "litter_robot_entity": "Litter box weight sensor entity",
+          "min_weight": "Minimum weight (ignore below)",
+          "max_weight": "Maximum weight (ignore above)"
+        }
+      },
+      "add_cat": {
+        "title": "Add a Cat",
+        "description": "Add cats to track. You must add at least one cat.",
+        "data": {
+          "name": "Cat name",
+          "weight": "Current weight (lb)",
+          "add_another": "Add another cat"
+        }
+      }
+    },
+    "error": {
+      "invalid_entity": "Entity not found. Please select a valid sensor entity.",
+      "no_cats": "You must add at least one cat.",
+      "duplicate_cat": "A cat with this name already exists."
+    },
+    "abort": {
+      "already_configured": "Cat Weight Tracker is already configured."
+    }
+  }
+}
