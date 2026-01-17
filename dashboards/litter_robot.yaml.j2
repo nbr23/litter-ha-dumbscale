@@ -1,0 +1,88 @@
+# Litter Robot & Cat Weight Tracker Dashboard
+#
+# SETUP:
+#   Add this dashboard via:
+#     - UI: Settings > Dashboards > Add Dashboard > paste as raw config
+#     - Or add to configuration.yaml:
+#       lovelace:
+#         dashboards:
+#           litter-robot:
+#             mode: yaml
+#             filename: path/to/this/file.yaml
+
+title: Litter Robot
+views:
+  - title: Overview
+    path: overview
+    icon: mdi:cat
+    cards:
+
+      # ==========================================
+      # Cat Weights (editable)
+      # ==========================================
+      - type: entities
+        title: Cat Weights
+        show_header_toggle: false
+        entities:
+{% for cat in cats %}
+          - entity: number.litter_ha_dumbscale_{{ cat.slug }}_weight
+            name: {{ cat.name }}
+            icon: mdi:scale
+{% endfor %}
+
+      # ==========================================
+      # Litter Robot Status
+      # ==========================================
+      - type: glance
+        title: Litter Robot Status
+        columns: 3
+        show_name: true
+        show_state: true
+        show_icon: true
+        entities:
+          - entity: {{ litter_level_entity }}
+            name: Litter Level
+            icon: mdi:gradient-vertical
+          - entity: {{ waste_drawer_entity }}
+            name: Waste Drawer
+            icon: mdi:delete-variant
+          - entity: {{ vacuum_entity }}
+            name: Status
+            icon: mdi:robot
+
+      # ==========================================
+      # Visit History Log (last ~25 visits)
+      # ==========================================
+      - type: logbook
+        title: Recent Visits
+        entities:
+          - sensor.litter_ha_dumbscale_last_cat
+        hours_to_show: 168
+
+
+      # ==========================================
+      # Weight History (7 days)
+      # ==========================================
+      - type: history-graph
+        title: Weight History (7 Days)
+        hours_to_show: 168
+        entities:
+{% for cat in cats %}
+          - entity: number.litter_ha_dumbscale_{{ cat.slug }}_weight
+            name: {{ cat.name }}
+{% endfor %}
+
+      # ==========================================
+      # Daily Visit Count (7 days)
+      # ==========================================
+      - type: statistics-graph
+        title: Daily Visits (7 Days)
+        period: day
+        days_to_show: 7
+        stat_types:
+          - change
+        entities:
+{% for cat in cats %}
+          - entity: sensor.litter_ha_dumbscale_{{ cat.slug }}_visit_count
+            name: {{ cat.name }}
+{% endfor %}
