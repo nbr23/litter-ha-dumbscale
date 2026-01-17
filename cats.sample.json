@@ -1,0 +1,10 @@
+{
+  "weight_sensor_entity": "sensor.litter_robot_pet_weight",
+  "litter_level_entity": "sensor.litter_robot_litter_level",
+  "waste_drawer_entity": "sensor.litter_robot_waste_drawer",
+  "vacuum_entity": "vacuum.litter_robot",
+  "cats": [
+    "Cat 1",
+    "Cat 2"
+  ]
+}
