@@ -2,6 +2,8 @@
 
 A Home Assistant custom integration that tracks (better) which cat used the litter box based on weight readings from the Litter-Robot 4's SmartScale.
 
+![Litter Home-Assistant DumbScale Dashboard][1]
+
 ## Installation
 
 1. Copy the `custom_components/litter_ha_dumbscale` folder to your Home Assistant's `custom_components` directory
@@ -62,3 +64,5 @@ uv run --script generate_dashboard.py --config cats.json -o my_dashboard.yaml
   "cats": ["Cat 1", "Cat 2"]
 }
 ```
+
+[1]:docs/ha-dashboard.png
