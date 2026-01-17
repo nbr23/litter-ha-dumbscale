@@ -1,6 +1,6 @@
 # Litter Home-Assistant DumbScale
 
-A Home Assistant custom integration that tracks (better) which cat used the litter box based on weight readings from the Litter-Robot 4's SmartScale.
+A Home Assistant custom integration that tracks (better) which cat used the litter box based on weight readings from the Litter-Robot 4's SmartScale. Relies on data collected by the [litter-robot integration](https://www.home-assistant.io/integrations/litterrobot/)
 
 ![Litter Home-Assistant DumbScale Dashboard][1]
 
