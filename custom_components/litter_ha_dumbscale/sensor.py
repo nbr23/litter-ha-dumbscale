@@ -17,7 +17,7 @@ from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.util import slugify
 
 from . import get_device_info
-from .const import CONF_CAT_NAME, CONF_CATS, DOMAIN, SIGNAL_CAT_UPDATE
+from .const import CONF_CAT_NAME, CONF_CAT_WEIGHT, CONF_CATS, DOMAIN, SIGNAL_CAT_UPDATE
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -34,6 +34,7 @@ async def async_setup_entry(
         cat_name = cat[CONF_CAT_NAME]
         entities.append(CatVisitCountSensor(entry, cat_name))
         entities.append(CatLastVisitSensor(entry, cat_name))
+        entities.append(CatEmaWeightSensor(entry, cat_name, cat[CONF_CAT_WEIGHT]))
 
     entities.append(LastCatSensor(entry))
 
@@ -197,3 +198,56 @@ class LastCatSensor(RestoreEntity, SensorEntity):
         self._last_weight = data["weight"]
         self._attr_native_value = f"{data['cat']} ({data['weight']:.1f} lb)"
         self.async_write_ha_state()
+
+
+class CatEmaWeightSensor(RestoreEntity, SensorEntity):
+
+    _attr_has_entity_name = True
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_native_unit_of_measurement = "lb"
+    _attr_icon = "mdi:scale-balance"
+    _attr_native_value = None
+
+    def __init__(
+        self,
+        entry: ConfigEntry,
+        cat_name: str,
+        initial_weight: float,
+    ) -> None:
+        self._entry = entry
+        self._cat_name = cat_name
+        self._initial_weight = initial_weight
+        cat_slug = slugify(cat_name)
+
+        self._attr_unique_id = f"{entry.entry_id}_{cat_slug}_ema_weight"
+        self._attr_name = f"{cat_name} EMA weight"
+        self.entity_id = f"sensor.litter_ha_dumbscale_{cat_slug}_ema_weight"
+
+    @property
+    def device_info(self):
+        return get_device_info(self._entry)
+
+    async def async_added_to_hass(self) -> None:
+        await super().async_added_to_hass()
+
+        if (last_state := await self.async_get_last_state()) is not None:
+            try:
+                self._attr_native_value = float(last_state.state)
+            except (ValueError, TypeError):
+                self._attr_native_value = self._initial_weight
+        else:
+            self._attr_native_value = self._initial_weight
+
+        self.async_on_remove(
+            async_dispatcher_connect(
+                self.hass,
+                f"{SIGNAL_CAT_UPDATE}_{self._entry.entry_id}",
+                self._handle_update,
+            )
+        )
+
+    @callback
+    def _handle_update(self, data: dict) -> None:
+        if data["cat"] == self._cat_name:
+            self._attr_native_value = data["ema_weight"]
+            self.async_write_ha_state()

@@ -10,12 +10,14 @@ from homeassistant.helpers import selector
 
 from .const import (
     CONF_ADD_ANOTHER,
+    CONF_ANOMALY_THRESHOLD,
     CONF_CAT_NAME,
     CONF_CAT_WEIGHT,
     CONF_CATS,
     CONF_LITTER_ROBOT_ENTITY,
     CONF_MAX_WEIGHT,
     CONF_MIN_WEIGHT,
+    DEFAULT_ANOMALY_THRESHOLD,
     DEFAULT_MAX_WEIGHT,
     DEFAULT_MIN_WEIGHT,
     DOMAIN,
@@ -46,6 +48,7 @@ class CatWeightTrackerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     CONF_LITTER_ROBOT_ENTITY: entity_id,
                     CONF_MIN_WEIGHT: user_input[CONF_MIN_WEIGHT],
                     CONF_MAX_WEIGHT: user_input[CONF_MAX_WEIGHT],
+                    CONF_ANOMALY_THRESHOLD: user_input[CONF_ANOMALY_THRESHOLD],
                 }
                 return await self.async_step_add_cat()
 
@@ -73,6 +76,17 @@ class CatWeightTrackerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         selector.NumberSelectorConfig(
                             min=0,
                             max=50,
+                            step=0.1,
+                            unit_of_measurement="lb",
+                            mode=selector.NumberSelectorMode.BOX,
+                        )
+                    ),
+                    vol.Required(
+                        CONF_ANOMALY_THRESHOLD, default=DEFAULT_ANOMALY_THRESHOLD
+                    ): selector.NumberSelector(
+                        selector.NumberSelectorConfig(
+                            min=0.1,
+                            max=10.0,
                             step=0.1,
                             unit_of_measurement="lb",
                             mode=selector.NumberSelectorMode.BOX,

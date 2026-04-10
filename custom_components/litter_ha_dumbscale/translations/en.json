@@ -7,7 +7,8 @@
         "data": {
           "litter_robot_entity": "Litter box weight sensor entity",
           "min_weight": "Minimum weight (ignore below)",
-          "max_weight": "Maximum weight (ignore above)"
+          "max_weight": "Maximum weight (ignore above)",
+          "anomaly_threshold": "Anomaly threshold (reject if diff exceeds)"
         }
       },
       "add_cat": {

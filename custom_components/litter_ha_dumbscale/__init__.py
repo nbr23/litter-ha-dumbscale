@@ -13,14 +13,18 @@ from homeassistant.helpers.event import async_track_state_change_event
 from homeassistant.util import dt as dt_util, slugify
 
 from .const import (
+    CONF_ANOMALY_THRESHOLD,
     CONF_CAT_NAME,
     CONF_CAT_WEIGHT,
     CONF_CATS,
     CONF_LITTER_ROBOT_ENTITY,
     CONF_MAX_WEIGHT,
     CONF_MIN_WEIGHT,
+    DEFAULT_ANOMALY_THRESHOLD,
+    DEFAULT_EMA_ALPHA,
     DOMAIN,
     PLATFORMS,
+    SIGNAL_ANOMALY_UPDATE,
     SIGNAL_CAT_UPDATE,
 )
 
@@ -58,7 +62,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     async def handle_weight_change(event: Event) -> None:
-        """Handle litter robot weight sensor state change."""
         new_state = event.data.get("new_state")
         if new_state is None or new_state.state in (STATE_UNKNOWN, STATE_UNAVAILABLE):
             return
@@ -81,38 +84,87 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             )
             return
 
+        anomaly_threshold = config.get(
+            CONF_ANOMALY_THRESHOLD, DEFAULT_ANOMALY_THRESHOLD
+        )
+
         closest_cat = None
         closest_diff = float("inf")
+        closest_ema = None
         second_closest_cat = None
         second_closest_diff = float("inf")
 
         cats_data = hass.data[DOMAIN][entry.entry_id]["cats"]
 
         for cat_name, cat_info in cats_data.items():
-            weight_entity_id = f"number.litter_ha_dumbscale_{cat_info['slug']}_weight"
-            state = hass.states.get(weight_entity_id)
+            ema_entity_id = (
+                f"sensor.litter_ha_dumbscale_{cat_info['slug']}_ema_weight"
+            )
+            state = hass.states.get(ema_entity_id)
 
             if state is None or state.state in (STATE_UNKNOWN, STATE_UNAVAILABLE):
-                current_weight = cat_info["initial_weight"]
+                current_ema = cat_info["initial_weight"]
             else:
                 try:
-                    current_weight = float(state.state)
+                    current_ema = float(state.state)
                 except (ValueError, TypeError):
-                    current_weight = cat_info["initial_weight"]
+                    current_ema = cat_info["initial_weight"]
 
-            diff = abs(new_weight - current_weight)
+            diff = abs(new_weight - current_ema)
 
             if diff < closest_diff:
                 second_closest_cat = closest_cat
                 second_closest_diff = closest_diff
                 closest_diff = diff
                 closest_cat = cat_name
+                closest_ema = current_ema
             elif diff < second_closest_diff:
                 second_closest_cat = cat_name
                 second_closest_diff = diff
 
         if closest_cat is None:
             _LOGGER.warning("No cats configured, cannot attribute weight reading")
+            return
+
+        if closest_diff > anomaly_threshold:
+            _LOGGER.warning(
+                "Anomaly detected: weight %.2f lb differs from closest cat %s "
+                "by %.2f lb (threshold: %.2f lb)",
+                new_weight,
+                closest_cat,
+                closest_diff,
+                anomaly_threshold,
+            )
+
+            hass.components.persistent_notification.async_create(
+                f"Weight reading {new_weight:.2f} lb rejected as anomaly. "
+                f"Closest cat: {closest_cat} (diff: {closest_diff:.2f} lb, "
+                f"threshold: {anomaly_threshold:.2f} lb).",
+                title="Cat Weight Tracker Anomaly",
+                notification_id=f"{DOMAIN}_anomaly",
+            )
+
+            hass.bus.async_fire(
+                f"{DOMAIN}_anomaly",
+                {
+                    "weight": new_weight,
+                    "closest_cat": closest_cat,
+                    "diff": round(closest_diff, 2),
+                    "threshold": anomaly_threshold,
+                    "timestamp": dt_util.utcnow().isoformat(),
+                },
+            )
+
+            async_dispatcher_send(
+                hass,
+                f"{SIGNAL_ANOMALY_UPDATE}_{entry.entry_id}",
+                {
+                    "anomaly": True,
+                    "weight": new_weight,
+                    "closest_cat": closest_cat,
+                    "diff": round(closest_diff, 2),
+                },
+            )
             return
 
         if (
@@ -130,11 +182,23 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 new_weight,
             )
 
+        new_ema = round(
+            DEFAULT_EMA_ALPHA * new_weight + (1 - DEFAULT_EMA_ALPHA) * closest_ema, 2
+        )
+
         _LOGGER.info(
-            "Attributed weight %.2f lb to %s (diff: %.2f lb)",
+            "Attributed weight %.2f lb to %s (diff: %.2f lb, EMA: %.2f -> %.2f)",
             new_weight,
             closest_cat,
             closest_diff,
+            closest_ema,
+            new_ema,
+        )
+
+        async_dispatcher_send(
+            hass,
+            f"{SIGNAL_ANOMALY_UPDATE}_{entry.entry_id}",
+            {"anomaly": False},
         )
 
         async_dispatcher_send(
@@ -143,6 +207,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             {
                 "cat": closest_cat,
                 "weight": new_weight,
+                "ema_weight": new_ema,
                 "timestamp": dt_util.utcnow().isoformat(),
             },
         )

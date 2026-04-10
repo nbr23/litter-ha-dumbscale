@@ -9,10 +9,14 @@ CONF_CATS = "cats"
 CONF_CAT_NAME = "name"
 CONF_CAT_WEIGHT = "weight"
 CONF_ADD_ANOTHER = "add_another"
+CONF_ANOMALY_THRESHOLD = "anomaly_threshold"
 
 DEFAULT_MIN_WEIGHT = 4.0
 DEFAULT_MAX_WEIGHT = 25.0
+DEFAULT_ANOMALY_THRESHOLD = 1.0
+DEFAULT_EMA_ALPHA = 0.3
 
 SIGNAL_CAT_UPDATE = f"{DOMAIN}_cat_update"
+SIGNAL_ANOMALY_UPDATE = f"{DOMAIN}_anomaly_update"
 
-PLATFORMS = ["number", "sensor"]
+PLATFORMS = ["binary_sensor", "number", "sensor"]
