@@ -16,16 +16,27 @@ A Home Assistant custom integration that tracks (better) which cat used the litt
 3. Search for "Cat Weight Tracker"
 4. Select your litter box weight sensor entity
 5. Set minimum/maximum weight thresholds (to filter out invalid readings)
-6. Add each cat with their current weight
+6. Set the anomaly threshold (readings that differ from all known cat weights by more than this are rejected — default 1.0 lb)
+7. Add each cat with their current weight
 
 ## Entities Created
 
 | Entity | Type | Description |
 |--------|------|-------------|
-| `number.litter_ha_dumbscale_{cat}_weight` | Number | Current weight for each cat (editable) |
+| `number.litter_ha_dumbscale_{cat}_weight` | Number | Raw last measured weight per cat (editable) |
+| `sensor.litter_ha_dumbscale_{cat}_ema_weight` | Sensor | Smoothed weight per cat (exponential moving average) |
 | `sensor.litter_ha_dumbscale_{cat}_visit_count` | Sensor | Total litter box visits per cat |
 | `sensor.litter_ha_dumbscale_{cat}_last_visit` | Sensor | Timestamp of last visit per cat |
 | `sensor.litter_ha_dumbscale_last_cat` | Sensor | Last cat to use the box (format: "Name (X.X lb)") |
+| `binary_sensor.litter_ha_dumbscale_anomaly` | Binary Sensor | On when the last reading was rejected as an anomaly |
+
+## How It Works
+
+On each weight reading the integration:
+
+1. Compares the reading against each cat's smoothed (EMA) weight to find the closest match
+2. Rejects the reading if it differs from every cat's EMA by more than the anomaly threshold — fires a persistent notification and a `litter_ha_dumbscale_anomaly` event so you can build automations around it
+3. On a valid match, updates the cat's raw weight and nudges their EMA weight toward the new reading (alpha=0.3), so a single bad reading that slips through can only shift the reference weight by 30%
 
 ## Resetting
 
