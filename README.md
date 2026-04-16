@@ -14,7 +14,7 @@ A Home Assistant custom integration that tracks (better) which cat used the litt
 1. Go to **Settings** > **Devices & Services**
 2. Click **Add Integration**
 3. Search for "Cat Weight Tracker"
-4. Select your litter box weight sensor entity
+4. Select one or more weight sensor entities
 5. Set minimum/maximum weight thresholds (to filter out invalid readings)
 6. Set the anomaly threshold (readings that differ from all known cat weights by more than this are rejected — default 1.0 lb)
 7. Add each cat with their current weight
