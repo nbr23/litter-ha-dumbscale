@@ -20,6 +20,7 @@ from .const import (
     CONF_LITTER_ROBOT_ENTITY,
     CONF_MAX_WEIGHT,
     CONF_MIN_WEIGHT,
+    CONF_WEIGHT_ENTITIES,
     DEFAULT_ANOMALY_THRESHOLD,
     DEFAULT_EMA_ALPHA,
     DOMAIN,
@@ -212,10 +213,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             },
         )
 
+    weight_entities = entry.data.get(
+        CONF_WEIGHT_ENTITIES, [entry.data[CONF_LITTER_ROBOT_ENTITY]]
+    ) if CONF_LITTER_ROBOT_ENTITY in entry.data else entry.data[CONF_WEIGHT_ENTITIES]
+
     entry.async_on_unload(
         async_track_state_change_event(
             hass,
-            [entry.data[CONF_LITTER_ROBOT_ENTITY]],
+            weight_entities,
             handle_weight_change,
         )
     )

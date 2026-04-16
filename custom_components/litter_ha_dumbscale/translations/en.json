@@ -5,7 +5,7 @@
         "title": "Configure Cat Weight Tracker",
         "description": "Set up the litter box weight sensor and thresholds.",
         "data": {
-          "litter_robot_entity": "Litter box weight sensor entity",
+          "weight_entities": "Weight sensor entities",
           "min_weight": "Minimum weight (ignore below)",
           "max_weight": "Maximum weight (ignore above)",
           "anomaly_threshold": "Anomaly threshold (reject if diff exceeds)"

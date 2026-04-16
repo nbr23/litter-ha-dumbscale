@@ -17,6 +17,7 @@ from .const import (
     CONF_LITTER_ROBOT_ENTITY,
     CONF_MAX_WEIGHT,
     CONF_MIN_WEIGHT,
+    CONF_WEIGHT_ENTITIES,
     DEFAULT_ANOMALY_THRESHOLD,
     DEFAULT_MAX_WEIGHT,
     DEFAULT_MIN_WEIGHT,
@@ -27,7 +28,7 @@ from .const import (
 class CatWeightTrackerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Cat Weight Tracker."""
 
-    VERSION = 1
+    VERSION = 2
 
     def __init__(self) -> None:
         """Initialize the config flow."""
@@ -39,13 +40,14 @@ class CatWeightTrackerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         errors = {}
 
         if user_input is not None:
-            entity_id = user_input[CONF_LITTER_ROBOT_ENTITY]
+            entity_ids = user_input[CONF_WEIGHT_ENTITIES]
 
-            if self.hass.states.get(entity_id) is None:
+            invalid = [e for e in entity_ids if self.hass.states.get(e) is None]
+            if invalid:
                 errors["base"] = "invalid_entity"
             else:
                 self.data = {
-                    CONF_LITTER_ROBOT_ENTITY: entity_id,
+                    CONF_WEIGHT_ENTITIES: entity_ids,
                     CONF_MIN_WEIGHT: user_input[CONF_MIN_WEIGHT],
                     CONF_MAX_WEIGHT: user_input[CONF_MAX_WEIGHT],
                     CONF_ANOMALY_THRESHOLD: user_input[CONF_ANOMALY_THRESHOLD],
@@ -56,8 +58,10 @@ class CatWeightTrackerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             step_id="user",
             data_schema=vol.Schema(
                 {
-                    vol.Required(CONF_LITTER_ROBOT_ENTITY): selector.EntitySelector(
-                        selector.EntitySelectorConfig(domain="sensor")
+                    vol.Required(CONF_WEIGHT_ENTITIES): selector.EntitySelector(
+                        selector.EntitySelectorConfig(
+                            domain="sensor", multiple=True
+                        )
                     ),
                     vol.Required(
                         CONF_MIN_WEIGHT, default=DEFAULT_MIN_WEIGHT

@@ -3,6 +3,7 @@
 DOMAIN = "litter_ha_dumbscale"
 
 CONF_LITTER_ROBOT_ENTITY = "litter_robot_entity"
+CONF_WEIGHT_ENTITIES = "weight_entities"
 CONF_MIN_WEIGHT = "min_weight"
 CONF_MAX_WEIGHT = "max_weight"
 CONF_CATS = "cats"
